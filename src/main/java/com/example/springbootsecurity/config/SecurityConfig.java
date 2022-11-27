@@ -1,11 +1,13 @@
 package com.example.springbootsecurity.config;
 
 import com.example.springbootsecurity.account.AccountService;
+import com.example.springbootsecurity.common.LoggingFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.access.AccessDecisionManager;
 import org.springframework.security.access.AccessDecisionVoter;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.expression.SecurityExpressionHandler;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.access.vote.AffirmativeBased;
@@ -15,9 +17,16 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler;
 import org.springframework.security.web.access.expression.WebExpressionVoter;
+import org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -62,11 +71,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+        http.addFilterBefore(new LoggingFilter() , WebAsyncManagerIntegrationFilter.class);
+
         http.authorizeRequests()
                     .mvcMatchers("/","/info","/account/**","/signup").permitAll()
                     .mvcMatchers("/admin").hasRole("ADMIN")
                     .mvcMatchers("/user").hasRole("USER")
                     .anyRequest().authenticated()
+                    //.expressionHandler(expressionHandler())
                 .accessDecisionManager(accessDecisionManager())
                     .and()
                 .formLogin()
@@ -77,8 +89,34 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .loginPage("/login")
                 .permitAll();
 
+        http.rememberMe()
+                .userDetailsService(accountService)
+                .key("remeber-me-sample")
+        ;
 
         http.logout().logoutSuccessUrl("/");
+
+        /*http.sessionManagement()
+                .sessionFixation()
+                    .changeSessionId()
+                .maximumSessions(1)
+                    .maxSessionsPreventsLogin(false);//기본값은 false , true로 설정 시 로그인한사람이 존재할경우 다른 세션에서 로그인 불가
+        ;*/
+
+        // TODO ExceptionTranslatorFilter -> FilterSecurityInterceptor (AccessDecisionManager , AffirmativeBased)
+        // TODO AuthenticationException -> AuthenticationEntryPoint
+        // TODO AccessDeniedException -> AccessDeniedHandler
+
+        http.exceptionHandling()
+                //.accessDeniedPage("/access-denied")
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+                    String username = principal.getUsername();
+                    System.out.println(username + " is denied to access "+request.getRequestURI());
+                    response.sendRedirect("/access-denied");
+                })
+        ;
+
         //하위 쓰레드에도 SecurityContextHolder 공유 설정
         SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
     }
