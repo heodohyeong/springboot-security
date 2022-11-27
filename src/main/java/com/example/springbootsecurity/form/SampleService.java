@@ -3,6 +3,8 @@ package com.example.springbootsecurity.form;
 
 import com.example.springbootsecurity.account.Account;
 import com.example.springbootsecurity.account.AccountContext;
+import com.example.springbootsecurity.common.SecurityLogger;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,6 +34,13 @@ public class SampleService {
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         Object credentials = authentication.getCredentials();
         boolean authenticated = authentication.isAuthenticated();*/
+
+    }
+
+    @Async
+    public void asyncService() {
+        SecurityLogger.log("Async Service");
+        System.out.println("Async service is called.");
 
     }
 }
