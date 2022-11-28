@@ -3,18 +3,18 @@ package com.example.springbootsecurity.form;
 import com.example.springbootsecurity.account.Account;
 import com.example.springbootsecurity.account.AccountContext;
 import com.example.springbootsecurity.account.AccountRepository;
-import com.example.springbootsecurity.account.UserAccount;
+import com.example.springbootsecurity.book.Book;
+import com.example.springbootsecurity.book.BookRepository;
 import com.example.springbootsecurity.common.CurrentUser;
 import com.example.springbootsecurity.common.SecurityLogger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 @Controller
@@ -24,6 +24,9 @@ public class SampleController {
 
     @Autowired
     AccountRepository accountRepository;
+
+    @Autowired
+    BookRepository bookRepository;
 
     @GetMapping("/")
     //public String index(Model model , Principal principal){
@@ -61,7 +64,10 @@ public class SampleController {
 
     @GetMapping("/user")
     public String user(Model model , Principal principal){
-        model.addAttribute("message","Hello user" + principal.getName());
+        model.addAttribute("message","Hello user " + principal.getName());
+        List<Book> list = bookRepository.findCurrentUserBooks();
+        model.addAttribute("books" , bookRepository.findCurrentUserBooks());
+
         return "user";
     }
 

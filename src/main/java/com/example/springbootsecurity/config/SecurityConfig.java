@@ -76,17 +76,18 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.addFilterBefore(new LoggingFilter() , WebAsyncManagerIntegrationFilter.class);
 
         http.authorizeRequests()
-                    .mvcMatchers("/","/info","/account/**","/signup").permitAll()
+                    .mvcMatchers("/","/info","/account/**","/signup" , "/h2-console/**").permitAll()
                     .mvcMatchers("/admin").hasRole("ADMIN")
                     .mvcMatchers("/user").hasRole("USER")
                     .anyRequest().authenticated()
-                    //.expressionHandler(expressionHandler())
-                .accessDecisionManager(accessDecisionManager())
-                    .and()
-                .formLogin()
-                    .and()
-                .httpBasic();
-
+                    .expressionHandler(expressionHandler());
+                //.accessDecisionManager(accessDecisionManager())
+                 //   .and()
+                //.formLogin()
+                //    .and()
+                //.httpBasic();
+        http.formLogin();
+        http.httpBasic();
         http.formLogin()
                 .loginPage("/login")
                 .permitAll();
